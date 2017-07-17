@@ -59,12 +59,13 @@ class No {
 
 // generator utils
 
-function* chainGenerator(generator, transform) {
-  var next = generator.next();
+function* chainTruthGenerator(generator, transform, truth) {
+  const next = generator.next();
 
   if (!next.done) {
-    yield transform(next.value);
-    yield* chainGenerator(generator, transform);
+    const newTruth = transform(truth.bind(() => lifted(next.value)));
+    yield newTruth;
+    yield* chainTruthGenerator(generator, transform, newTruth.bind(() => spoken("\n")));
   }
 }
 
@@ -115,17 +116,17 @@ function idComp(maybe) {
 // fizzbuzz implementation
 
 function LazyFizzbuzzerFactory() {
-  return chainGenerator(range(1, 100), value => lifted(value)
+  return chainTruthGenerator(range(1, 100), truth => truth
       .bind(fizzbuzzComp)
       .bind(fizzComp)
       .bind(buzzComp)
-      .bind(idComp));
+      .bind(idComp),
+      pass());
 }
 
 
 
 // main
-
-for (truth of LazyFizzbuzzerFactory()) {
-  consoleTruth(truth);
-}
+let truth = null;
+for (truth of LazyFizzbuzzerFactory()) {}
+consoleTruth(truth);
