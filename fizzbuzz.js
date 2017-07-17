@@ -6,24 +6,31 @@ class Truth {
     this.speakTheTruth = speakTheTruth;
   }
 
-  bind(nextSpeaker) {
-    return new Truth(w => {
-      const { words, value } = this.speakTheTruth(w);
-      return nextSpeaker(words, value).speakTheTruth(words);
+  bind(getNextSpeaker) {
+    return new Truth(oldWords => {
+      const { words, value } = this.speakTheTruth(oldWords);
+      return getNextSpeaker(value, words).speakTheTruth(words);
     });
   }
 }
 
-function lifted(v) {
-  return new Truth((words, value) => {return { words, value: new Yes(v) }});
+function lifted(liftValue) {
+  return new Truth(words => {
+    return { words, value: new Yes(liftValue) };
+  });
 }
 
 function spoken(moreWords) {
-  return new Truth((words, value) => {return { words: words + moreWords, value: new No() }});
+  return new Truth(words => {
+    return {
+      words: words + moreWords,
+      value: new No()
+    };
+  });
 }
 
 function pass() {
-  return new Truth((words, value) => {return { words, value: new No() }});
+  return new Truth(words => {return { words, value: new No() }});
 }
 
 function consoleTruth(truth) {
@@ -72,7 +79,7 @@ function* range(start, end) {
 
 // fizzbuzz computations
 
-function fizzbuzzComp(words, maybe) {
+function fizzbuzzComp(maybe) {
   return maybe.bind(value => {
     if (value % 5 === 0 && value % 3 === 0) {
       return spoken("fizzbuzz");
@@ -81,7 +88,7 @@ function fizzbuzzComp(words, maybe) {
   });
 }
 
-function fizzComp(words, maybe) {
+function fizzComp(maybe) {
   return maybe.bind(value => {
     if (value % 3 === 0) {
       return spoken("fizz");
@@ -90,7 +97,7 @@ function fizzComp(words, maybe) {
   });
 }
 
-function buzzComp(words, maybe) {
+function buzzComp(maybe) {
   return maybe.bind(value => {
     if (value % 5 === 0) {
       return spoken("buzz");
@@ -99,7 +106,7 @@ function buzzComp(words, maybe) {
   });
 }
 
-function idComp(words, maybe) {
+function idComp(maybe) {
   return maybe.bind(spoken);
 }
 
