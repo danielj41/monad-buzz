@@ -1,46 +1,120 @@
 // monad variants
 
-class Lifted {
+/**
+ * An IO monad implementation. Please only use this monad to say things that are
+ * true; do not lie to your user.
+ * Truth<T>
+ */
+class Truth {
+  /**
+   * @param (oldWords: string -> { words: string, value: T }) speakTheTruth
+   */
+  constructor(speakTheTruth) {
+    this.speakTheTruth = speakTheTruth;
+  }
+
+  /**
+   * @param ((words, value) -> (oldWords -> { words, value })) getNextSpeaker
+   * @return Truth<T> A new Truth<T> monad expressing both Truths sequentially.
+   */
+  bind(getNextSpeaker) {
+    return new Truth(oldWords => {
+      const { words, value } = this.speakTheTruth(oldWords);
+      return getNextSpeaker(value, words).speakTheTruth(words);
+    });
+  }
+}
+
+/**
+ * A Maybe<T> monad implementation with two variants.
+ * variant Yes<T> contains a value, and will pass its value to bound functions.
+ * variant No does not contan a value, and will propagate the default value
+ *            forward.
+ */
+class Yes {
+  /**
+   * @param T value
+   */
   constructor(value) {
     this.value = value;
   }
 
-  chain(transform) {
-    var result = transform(this.value);
-    return result instanceof RideItOut ? this : result;
+  bind(fn, defaultValue) {
+    return fn(this.value);
   }
 }
 
-class Descend {
-  constructor(text) {
-    this.text = text;
-  }
-
-  chain(transform) {
-    return this;
-  }
-
-  toJSON() {
-    return this.text;
+class No {
+  bind(fn, defaultValue) {
+    return defaultValue;
   }
 }
 
-class RideItOut {
-  chain(transform) {
-    return this;
-  }
+/**
+ * Monad utils for common use cases.
+ */
+
+/**
+ * Takes a raw value and returns the value wrapped in a Maybe and IO monad.
+ * The IO monad will not output anything.
+ *
+ * @param T liftValue The raw value to lift
+ * @return Truth<Maybe<T>>
+ */
+function lifted(liftValue) {
+  return new Truth(words => {
+    return { words, value: new Yes(liftValue) };
+  });
 }
+
+/**
+ * Takes words and returns an IO monad that will speak those words. This IO
+ * monad will "consume" the value passed through, returning a No monad variant.
+ *
+ * @param string moreWords
+ * @return Truth<Maybe<T>>
+ */
+function spoken(moreWords) {
+  return new Truth(words => {
+    return {
+      words: words + moreWords,
+      value: new No()
+    };
+  });
+}
+
+/**
+ * Returns an empty IO monad.
+ *
+ * @return Truth<Maybe<T>>
+ */
+function pass() {
+  return new Truth(words => {return { words, value: new No() }});
+}
+
+function consoleTruth(truth) {
+  console.log(truth.speakTheTruth('').words);
+}
+
+
+
+
 
 
 
 // generator utils
 
-function* chainGenerator(generator, transform) {
-  var next = generator.next();
+function* chainTruthGenerator(truth, generator, transform) {
+  const next = generator.next();
 
   if (!next.done) {
-    yield transform(next.value);
-    yield* chainGenerator(generator, transform);
+    const newTruth = transform(truth.bind(() => lifted(next.value)));
+    yield;
+    yield* chainTruthGenerator(newTruth.bind(() => spoken("\n")),
+        generator,
+        transform);
+  } else {
+    yield truth;
   }
 }
 
@@ -55,32 +129,35 @@ function* range(start, end) {
 
 // fizzbuzz computations
 
-function fizzbuzzComp(value) {
-  if (value % 5 === 0 && value % 3 === 0) {
-    return new Descend("fizzbuzz");
-  }
-
-  return new RideItOut();
+function fizzbuzzComp(maybe) {
+  return maybe.bind(value => {
+    if (value % 5 === 0 && value % 3 === 0) {
+      return spoken("fizzbuzz");
+    }
+    return lifted(value);
+  }, pass());
 }
 
-function fizzComp(value) {
-  if (value % 3 === 0) {
-    return new Descend("fizz");
-  }
-
-  return new RideItOut();
+function fizzComp(maybe) {
+  return maybe.bind(value => {
+    if (value % 3 === 0) {
+      return spoken("fizz");
+    }
+    return lifted(value);
+  }, pass());
 }
 
-function buzzComp(value) {
-  if (value % 5 === 0) {
-    return new Descend("buzz");
-  }
-
-  return new RideItOut();
+function buzzComp(maybe) {
+  return maybe.bind(value => {
+    if (value % 5 === 0) {
+      return spoken("buzz");
+    }
+    return lifted(value);
+  }, pass());
 }
 
-function idComp(value) {
-  return new Descend(value);
+function idComp(maybe) {
+  return maybe.bind(spoken, pass());
 }
 
 
@@ -88,18 +165,16 @@ function idComp(value) {
 // fizzbuzz implementation
 
 function LazyFizzbuzzerFactory() {
-  return chainGenerator(range(1, 100), (value) => new Lifted(value)
-      .chain(fizzbuzzComp)
-      .chain(fizzComp)
-      .chain(buzzComp)
-      .chain(idComp)
-      .toJSON());
+  return chainTruthGenerator(pass(), range(1, 100), truth => truth
+      .bind(fizzbuzzComp)
+      .bind(fizzComp)
+      .bind(buzzComp)
+      .bind(idComp));
 }
 
 
 
 // main
-
-for (text of LazyFizzbuzzerFactory()) {
-  console.log(text + "\n");
-}
+let truth = null;
+for (truth of LazyFizzbuzzerFactory()) {}
+consoleTruth(truth);
