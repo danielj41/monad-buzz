@@ -1,32 +1,16 @@
-import { pass, lifted, spoken } from './monad-utils.js';
+import { spoken, pass } from './monad-utils';
+import compFactory from './comp-factory.js';
 
-export function fizzbuzzComp(maybe) {
-  return maybe.bind(value => {
-    if (value % 5 === 0 && value % 3 === 0) {
-      return spoken("fizzbuzz");
-    }
-    return lifted(value);
-  }, pass());
-}
+export const fizzbuzzComp = compFactory(
+    value => value % 5 === 0 && value % 3 === 0,
+    "fizzbuzz");
 
-export function fizzComp(maybe) {
-  return maybe.bind(value => {
-    if (value % 3 === 0) {
-      return spoken("fizz");
-    }
-    return lifted(value);
-  }, pass());
-}
+export const fizzComp = compFactory(
+    value => value % 3 === 0,
+    "fizz");
 
-export function buzzComp(maybe) {
-  return maybe.bind(value => {
-    if (value % 5 === 0) {
-      return spoken("buzz");
-    }
-    return lifted(value);
-  }, pass());
-}
+export const buzzComp = compFactory(
+    value => value % 5 === 0,
+    "buzz");
 
-export function idComp(maybe) {
-  return maybe.bind(spoken, pass());
-}
+export const idComp = maybe => maybe.bind(spoken, pass());
