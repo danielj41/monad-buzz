@@ -43,5 +43,9 @@ export function pass() {
  * program.
  */
 export function consoleTruth(truth) {
-  console.log(truth.speakTheTruth('').words);
+  console.log(getTheWords(truth));
+}
+
+export function getTheWords(truth) {
+  return truth.speakTheTruth('').words;
 }
