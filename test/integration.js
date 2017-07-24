@@ -2,13 +2,20 @@ import assert from 'assert';
 
 import fizzbuzzer from '../src/fizzbuzz.js';
 import { getTheWords } from '../src/monad-utils.js';
+import yCombinator from '../src/y-combinator.js';
 
 describe('fizzbuzz', function() {
   describe('#fizzbuzzer()', function() {
     it('should match the expected output', function() {
-      let truth;
-      for (truth of fizzbuzzer()) {}
-      const words = getTheWords(truth);
+
+      const words = getTheWords((yCombinator(self =>
+        ({ fizzbuzz, finalTruth }) => {
+          const { done, value } = fizzbuzz.next();
+          return done ? finalTruth : self({ fizzbuzz, finalTruth: value });
+        })
+      )({
+        fizzbuzz: fizzbuzzer()
+      }));
 
       assert.equal(
               "1\n" +
