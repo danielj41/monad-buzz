@@ -18,5 +18,5 @@ export default function fizzbuzzer() {
         .bind(fizzComp)
         .bind(buzzComp)
         .bind(idComp)
-    });
+  });
 }
