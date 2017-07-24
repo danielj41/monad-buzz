@@ -1,4 +1,5 @@
 import { lifted, spoken } from './monad-utils.js';
+import yCombinator from './y-combinator.js';
 
 /**
  * Maps each value from `generator` through `transform`, chaining IO operations
@@ -26,9 +27,14 @@ export function* chainTruthGenerator(truth, generator, transform) {
 /**
  * Returns an iterator over a range of integers.
  */
-export function* range(start, end) {
-  if (start <= end) {
-    yield start;
-    yield* range(start + 1, end);
+export const range = yCombinator((self) =>
+  function*({ start, end }) {
+    if (start <= end) {
+      yield start;
+      yield* self({
+        start: start + 1,
+        end
+      });
+    }
   }
-}
+);

@@ -9,7 +9,8 @@ import { pass } from './monad-utils.js';
  *                  to create the final output.
  */
 export default function fizzbuzzer() {
-  return chainTruthGenerator(pass(), range(1, 100), truth => truth
+  return chainTruthGenerator(pass(), range({start: 1, end: 100}),
+      truth => truth
       .bind(fizzbuzzComp)
       .bind(fizzComp)
       .bind(buzzComp)
