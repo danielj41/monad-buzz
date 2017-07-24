@@ -9,25 +9,29 @@ import yCombinator from './y-combinator.js';
  * @param Iterator generator An iterator of values to `transform`.
  * @param (Truth -> Truth) transform
  */
-export function* chainTruthGenerator(truth, generator, transform) {
-  const next = generator.next();
+export const chainTruthGenerator = yCombinator(self =>
+  function*({ truth, generator, transform }) {
+    const next = generator.next();
 
-  if (!next.done) {
-    const newTruth = transform(truth.bind(() => lifted(next.value)));
-    yield newTruth; // Let the user do one iteration at a time.
+    if (!next.done) {
+      const newTruth = transform(truth.bind(() => lifted(next.value)));
+      yield newTruth; // Let the user do one iteration at a time.
 
-    yield* chainTruthGenerator(newTruth.bind(() => spoken("\n")),
+      yield* self({
+        truth: newTruth.bind(() => spoken("\n")),
         generator,
-        transform);
-  } else {
-    yield truth;
+        transform
+      });
+    } else {
+      yield truth;
+    }
   }
-}
+);
 
 /**
  * Returns an iterator over a range of integers.
  */
-export const range = yCombinator((self) =>
+export const range = yCombinator(self =>
   function*({ start, end }) {
     if (start <= end) {
       yield start;
