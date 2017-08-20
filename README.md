@@ -1,5 +1,5 @@
 # monad-buzz
-fizzbuzz without out all the sad mutation and interleaved IO [satire [kinda]]
+fizzbuzz without out all the sad mutation and io [satire [kind of]]
 
 ## featuring
 
